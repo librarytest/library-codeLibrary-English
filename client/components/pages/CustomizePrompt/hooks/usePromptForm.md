@@ -1,0 +1,427 @@
+---
+  title: 'usePromptForm.js'
+  description: 'component description'
+  pubDate: 'August 3, 2024'
+  author: 'librarytest'
+  ---
+  
+  
+  
+  # usePromptForm.js
+  # Code Explanation
+
+The provided code is a custom hook named `usePromptForm` that is used in a React application. This hook manages the state and functionality related to creating and saving custom prompts and instructions for a documentation process.
+
+### Dependencies
+- **React**: The code uses React hooks like `useState` and `useEffect` for managing component state and side effects.
+- **react-router-dom**: Used for navigation within the React application.
+- **useLoadingIndicator**: A custom hook for handling loading indicators during asynchronous operations.
+- **useInstructions**: A context hook for managing user instructions data.
+- **useLocalization**: A context hook for managing localization settings.
+
+### Functions and Constructs
+1. **useState**: Used to manage component state variables like `formState`, `markdownContent`, `currentAction`, etc.
+2. **useEffect**: Used to perform side effects like fetching user instructions based on the instruction ID.
+3. **useParams**: A hook from `react-router-dom` used to access parameters from the URL.
+4. **useNavigate**: A hook from `react-router-dom` used for programmatic navigation.
+5. **useLocation**: A hook from `react-router-dom` used to access the current location.
+6. **handleInputChange**: Updates the form state based on input changes.
+7. **handleFileChange**: Updates the selected file in the form state.
+8. **handleExampleClick**: Updates the selected example in the form state based on user selection.
+9. **handleRunTest**: Initiates a test run for the selected prompt and updates the markdown content with the result.
+10. **handleSaveInstructions**: Saves the user instructions to the backend API.
+11. **queryParams**: Extracts query parameters from the current URL.
+12. **FormData**: Used to construct form data for sending files and text data in HTTP requests.
+13. **fetch**: Performs HTTP requests to the server to run tests or save instructions.
+
+### Usage Example
+```jsx
+import React from "react";
+import usePromptForm from "./usePromptForm";
+
+const PromptFormComponent = () => {
+  const {
+    formState,
+    setFormState,
+    markdownContent,
+    promptExamples,
+    isLoading,
+    isSuccess,
+    isError,
+    isModalOpen,
+    setIsModalOpen,
+    handleInputChange,
+    handleFileChange,
+    handleExampleClick,
+    handleRunTest,
+    handleSaveInstructions,
+    currentAction,
+    navigate,
+    repoName,
+  } = usePromptForm();
+
+  return (
+    <div>
+      {/* JSX elements for form inputs, buttons, and display of markdown content */}
+    </div>
+  );
+};
+
+export default PromptFormComponent;
+```
+
+In the example above, `PromptFormComponent` uses the `usePromptForm` hook to manage the state and functionality related to creating and saving custom prompts and instructions. The hook provides various functions and state variables to interact with the form and handle user actions.
+  
+  ## Component Code
+  ```jsx
+  import { useState, useEffect } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import useLoadingIndicator from "../../../hooks/useLoadingIndicator";
+import { useInstructions } from "../../../context/UserInstructions";
+import { useLocalization } from "../../../context/LocalizationContext";
+
+const initialModelEn = `
+# 🛠️ How to Create Your Custom Prompts and Instructions 🛠️
+
+## Introduction
+Creating custom prompts and instructions allows you to tailor the documentation process to your specific needs. Follow the steps below to structure your file and ensure that all necessary information is included.
+
+## File Structure
+When creating your custom prompts and instructions, consider the following components:
+
+### 1. Summary
+Provide a brief overview of what the code does. This should include the main purpose and key functionalities.
+
+### 2. Dependencies
+List all the dependencies required for the code to run. Include version numbers and installation instructions.
+
+### 3. Examples
+Include example code snippets that demonstrate how to use the code. This helps users understand the practical application.
+
+### 4. How the Code Works
+Explain the logic and flow of the code. Detail important functions, classes, and methods to give a clear understanding of the inner workings.
+
+### 5. Custom Instructions
+You can customize the instructions in various languages such as Chinese, French, or Spanish. Specify your desired language and provide translated content if needed.
+
+### 6. Model Selection
+For generating documentation, you can use the GPT-3.5-Turbo model. Ensure to provide detailed instructions for the model, including:
+
+- **Desired Output Format**: Specify that the output should be in markdown format.
+- **Content Focus**: Instruct the AI to ignore any non-code-related content.
+- **Instruction Testing**: Test different combinations of instructions and models to find what suits your needs best.
+
+## Creating Custom Prompts
+Follow these steps to create and test your custom prompts:
+
+1. **Define Your Requirements**: Clearly outline what you need from the AI. Be specific about the structure and content.
+2. **Set Up Instructions**: Write detailed instructions for the AI to follow. Ensure clarity and precision in your instructions.
+3. **Test and Iterate**: Run tests with different instructions and model settings. Adjust based on the output quality and relevance.
+4. **Finalize Prompts**: Once satisfied with the results, finalize your prompts and save them for future use.
+
+## Example of Custom Prompts
+Here is an example of how to structure your custom prompts file:
+
+\`\`\`markdown
+# Summary
+This code is designed to scrape data from websites and store it in a database.
+
+# Dependencies
+- Python 3.8+
+- Requests library (v2.25.1)
+- BeautifulSoup (v4.9.3)
+
+# Examples
+\`\`\`python
+import requests
+from bs4 import BeautifulSoup
+
+def scrape_website(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    return soup.title.text
+
+print(scrape_website('https://example.com'))
+\`\`\`
+
+# How the Code Works
+The code uses the Requests library to fetch the website content and BeautifulSoup to parse the HTML. It extracts and prints the title of the webpage.
+
+# Custom Instructions
+Please provide documentation in French.
+
+# Model Selection
+Use GPT-3.5-Turbo for generating markdown documentation. Ensure the content is code-focused.
+\`\`\`
+
+## Tips for Effective Custom Prompts
+- **Be Specific**: The more detailed and specific your instructions, the better the AI can generate accurate documentation.
+- **Use Clear Language**: Avoid ambiguity in your prompts to prevent misinterpretation by the AI.
+- **Review and Revise**: Continuously review the output and refine your prompts for improved results.
+
+By following these guidelines, you can create effective custom prompts and instructions to enhance your documentation process with Code Library.
+
+Happy Documenting! 📄✨
+`;
+
+const initialModelEs = `
+# 🛠️ Cómo Crear tus Prompts e Instrucciones Personalizados 🛠️
+
+## Introducción
+Crear prompts e instrucciones personalizados te permite adaptar el proceso de documentación a tus necesidades específicas. Sigue los pasos a continuación para estructurar tu archivo y asegurarte de que toda la información necesaria esté incluida.
+
+## Estructura del Archivo
+Al crear tus prompts e instrucciones personalizados, considera los siguientes componentes:
+
+### 1. Resumen
+Proporciona una breve descripción de lo que hace el código. Esto debe incluir el propósito principal y las funcionalidades clave.
+
+### 2. Dependencias
+Enumera todas las dependencias necesarias para que el código funcione. Incluye números de versión e instrucciones de instalación.
+
+### 3. Ejemplos
+Incluye fragmentos de código de ejemplo que demuestren cómo usar el código. Esto ayuda a los usuarios a comprender la aplicación práctica.
+
+### 4. Cómo Funciona el Código
+Explica la lógica y el flujo del código. Detalla las funciones, clases y métodos importantes para dar una comprensión clara del funcionamiento interno.
+
+### 5. Instrucciones Personalizadas
+Puedes personalizar las instrucciones en varios idiomas como chino, francés o español. Especifica tu idioma deseado y proporciona contenido traducido si es necesario.
+
+### 6. Selección de Modelo
+Para generar documentación, puedes usar el modelo GPT-3.5-Turbo. Asegúrate de proporcionar instrucciones detalladas para el modelo, incluyendo:
+
+- **Formato de Salida Deseado**: Especifica que la salida debe estar en formato markdown.
+- **Enfoque del Contenido**: Instruye a la IA a ignorar cualquier contenido no relacionado con el código.
+- **Prueba de Instrucciones**: Prueba diferentes combinaciones de instrucciones y configuraciones de modelo para encontrar lo que mejor se adapte a tus necesidades.
+
+## Creando Prompts Personalizados
+Sigue estos pasos para crear y probar tus prompts personalizados:
+
+1. **Define tus Requisitos**: Define claramente lo que necesitas de la IA. Sé específico sobre la estructura y el contenido.
+2. **Configura las Instrucciones**: Escribe instrucciones detalladas para que la IA las siga. Asegúrate de claridad y precisión en tus instrucciones.
+3. **Prueba y Ajusta**: Realiza pruebas con diferentes instrucciones y configuraciones de modelo. Ajusta según la calidad y relevancia de la salida.
+4. **Finaliza los Prompts**: Una vez satisfecho con los resultados, finaliza tus prompts y guárdalos para uso futuro.
+
+## Ejemplo de Prompts Personalizados
+Aquí tienes un ejemplo de cómo estructurar tu archivo de prompts personalizados:
+
+\`\`\`markdown
+# Resumen
+Este código está diseñado para extraer datos de sitios web y almacenarlos en una base de datos.
+
+# Dependencias
+- Python 3.8+
+- Biblioteca Requests (v2.25.1)
+- BeautifulSoup (v4.9.3)
+
+# Ejemplos
+\`\`\`python
+import requests
+from bs4 import BeautifulSoup
+
+def scrape_website(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    return soup.title.text
+
+print(scrape_website('https://example.com'))
+\`\`\`
+
+# Cómo Funciona el Código
+El código usa la biblioteca Requests para obtener el contenido del sitio web y BeautifulSoup para analizar el HTML. Extrae e imprime el título de la página web.
+
+# Instrucciones Personalizadas
+Por favor, proporciona la documentación en francés.
+
+# Selección de Modelo
+Usa GPT-3.5-Turbo para generar la documentación en markdown. Asegúrate de que el contenido esté enfocado en el código.
+\`\`\`
+
+## Consejos para Prompts Personalizados Efectivos
+- **Sé Específico**: Cuanto más detalladas y específicas sean tus instrucciones, mejor podrá la IA generar documentación precisa.
+- **Usa un Lenguaje Claro**: Evita la ambigüedad en tus prompts para prevenir malinterpretaciones por parte de la IA.
+- **Revisa y Ajusta**: Revisa continuamente la salida y refina tus prompts para obtener mejores resultados.
+
+Siguiendo estas pautas, podrás crear prompts e instrucciones personalizados efectivos para mejorar tu proceso de documentación con Code Library.
+
+¡Feliz Documentación! 📄✨
+`;
+
+const promptExamplesEn = [
+  "Write a detailed step by step of the code",
+  "Write the Md File in Spanish",
+  "Write 5 examples of using this component",
+  "Write the Code with Typescript and explain the new addition",
+];
+
+const promptExamplesEs = [
+  "Escribe un paso a paso detallado del código",
+  "Escribe el archivo Md en español",
+  "Escribe 5 ejemplos de uso de este componente",
+  "Escribe el código con Typescript y explica la nueva adición",
+];
+
+const usePromptForm = () => {
+  const { repoName } = useParams();
+  const { userInstructions, setUserInstructions } = useInstructions();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isLoading, isSuccess, isError, handleLoading, isModalOpen, setIsModalOpen, setIsError } = useLoadingIndicator();
+  const { isSpanish } = useLocalization();
+  const initialModel = isSpanish ? initialModelEs : initialModelEn;
+  const promptExamples = isSpanish ? promptExamplesEs : promptExamplesEn;
+
+  const [formState, setFormState] = useState({
+    selectedFile: null,
+    selectedExample: "",
+    selectedModel: "",
+    instructionName: "",
+  });
+  const [markdownContent, setMarkdownContent] = useState(initialModel);
+  const [currentAction, setCurrentAction] = useState("");
+
+  const queryParams = new URLSearchParams(location.search);
+  const instructionId = queryParams.get("id");
+
+  useEffect(() => {
+    if (instructionId) {
+      const instruction = userInstructions.find((instr) => instr.id === instructionId);
+      if (instruction) {
+        setFormState({
+          selectedFile: null,
+          selectedExample: instruction.instructions,
+          selectedModel: instruction.model,
+          instructionName: instruction.name,
+        });
+      }
+    }
+  }, [instructionId, userInstructions]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormState((prev) => ({ ...prev, selectedFile: file }));
+    }
+  };
+
+  const handleExampleClick = (example) => {
+    setFormState((prev) => ({ ...prev, selectedExample: example }));
+  };
+
+  const handleRunTest = async (e) => {
+    e.preventDefault();
+    setCurrentAction("runTest");
+    setIsModalOpen(true);
+
+    const { selectedFile, selectedModel, selectedExample } = formState;
+
+    if (!selectedFile || !selectedModel || !selectedExample) {
+      setIsError(true);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("model", selectedModel);
+    formData.append("instructions", selectedExample);
+
+    try {
+      await handleLoading(async () => {
+        const response = await fetch("/ai/test-prompt", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to run test");
+        }
+
+        const result = await response.json();
+        setMarkdownContent(result.data.prompt);
+      });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleSaveInstructions = async () => {
+    setCurrentAction("saveInstructions");
+    setIsModalOpen(true);
+
+    const { instructionName, selectedModel, selectedExample } = formState;
+
+    if (!instructionName || !selectedModel || !selectedExample) {
+      setIsError(true);
+      return;
+    }
+
+    const promptData = {
+      id: instructionId,
+      instructionName,
+      model: selectedModel,
+      instructions: selectedExample,
+      repoName,
+    };
+
+    const endpoint = instructionId ? "/api/update-instruction" : "/api/save-instructions";
+
+    try {
+      await handleLoading(async () => {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(promptData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to ${instructionId ? "update" : "save"} instructions`);
+        }
+
+        const result = await response.json();
+        if (instructionId) {
+          setUserInstructions((prevInstructions) =>
+            prevInstructions.map((instr) => (instr.id === instructionId ? result.instruction : instr))
+          );
+        } else {
+          setUserInstructions((prevInstructions) => [...prevInstructions, result.instruction]);
+        }
+      });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  return {
+    formState,
+    setFormState,
+    markdownContent,
+    promptExamples,
+    isLoading,
+    isSuccess,
+    isError,
+    isModalOpen,
+    setIsModalOpen,
+    handleInputChange,
+    handleFileChange,
+    handleExampleClick,
+    handleRunTest,
+    handleSaveInstructions,
+    currentAction,
+    navigate,
+    repoName,
+  };
+};
+
+export default usePromptForm;
+  ```
+  
